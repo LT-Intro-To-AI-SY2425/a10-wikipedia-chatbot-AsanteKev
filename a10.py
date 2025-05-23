@@ -89,7 +89,7 @@ def get_polar_radius(planet_name: str) -> str:
     pattern = r"(?:Polar radius.*?)(?: ?[\d]+ )?(?P<radius>[\d,.]+)(?:.*?)km"
     error_text = "Page infobox has no polar radius information"
     match = get_match(infobox_text, pattern, error_text)
-
+    
     return match.group("radius")
 
 
@@ -108,8 +108,34 @@ def get_birth_date(name: str) -> str:
         "Page infobox has no birth information (at least none in xxxx-xx-xx format)"
     )
     match = get_match(infobox_text, pattern, error_text)
-
     return match.group("birth")
+
+
+def get_author(title: str) -> str:
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(title)))
+    pattern = r"(?:Author|Written by)\s*\n\s*(?P<author>[^\n]+)"
+    error_text = "Page infobox has no author information"
+    match = get_match(infobox_text, pattern, error_text)
+    return match.group("author")
+
+def get_highest_selling_chapter(title: str) -> str:
+    page_html = get_page_html(title)
+    text = clean_text(BeautifulSoup(page_html, "html.parser").get_text())
+    pattern = r"(?:highest[- ]selling chapter.*?chapter\s*(?P<chapter>\d+))"
+    error_text = "No highest selling chapter info found"
+    match = get_match(text, pattern, error_text)
+    return match.group("chapter")
+
+def get_lowest_selling_chapter(title: str) -> str:
+    page_html = get_page_html(title)
+    text = clean_text(BeautifulSoup(page_html, "html.parser").get_text())
+    pattern = r"(?:lowest[- ]selling chapter.*?chapter\s*(?P<chapter>\d+))"
+    error_text = "No lowest selling chapter info found"
+    match = get_match(text, pattern, error_text)
+    return match.group("chapter")
+
+
+
 
 
 # below are a set of actions. Each takes a list argument and returns a list of answers
@@ -141,6 +167,16 @@ def polar_radius(matches: List[str]) -> List[str]:
     return [get_polar_radius(matches[0])]
 
 
+def author(matches: List[str]) -> List[str]:
+    return [get_author(" ".join(matches))]
+
+def highest_selling_chapter(matches: List[str]) -> List[str]:
+    return [get_highest_selling_chapter(" ".join(matches))]
+
+def lowest_selling_chapter(matches: List[str]) -> List[str]:
+    return [get_lowest_selling_chapter(" ".join(matches))]
+
+
 # dummy argument is ignored and doesn't matter
 def bye_action(dummy: List[str]) -> None:
     raise KeyboardInterrupt
@@ -156,6 +192,9 @@ Action = Callable[[List[str]], List[Any]]
 pa_list: List[Tuple[Pattern, Action]] = [
     ("when was % born".split(), birth_date),
     ("what is the polar radius of %".split(), polar_radius),
+    ("who is the author of %".split(), author),
+    ("what is the highest selling chapter of %".split(), highest_selling_chapter),
+    ("what is the lowest selling chapter of %".split(), lowest_selling_chapter),
     (["bye"], bye_action),
 ]
 
@@ -184,7 +223,7 @@ def search_pa_list(src: List[str]) -> List[str]:
 def query_loop() -> None:
     """The simple query loop. The try/except structure is to catch Ctrl-C or Ctrl-D
     characters and exit gracefully"""
-    print("Welcome to the movie database!\n")
+    print("Welcome to the Wikipedia chatbot!\n")
     while True:
         try:
             print()
@@ -198,6 +237,5 @@ def query_loop() -> None:
 
     print("\nSo long!\n")
 
-
-# uncomment the next line once you've implemented everything are ready to try it out
-query_loop()
+ # Uncomment this to run in interactive mode
+query_loop() 
